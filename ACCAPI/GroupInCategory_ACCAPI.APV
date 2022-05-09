@@ -1,0 +1,96 @@
+[MODULE]
+NAME 'GroupInCategory_ACCAPI.clw'
+[COMMON]
+FROM Clarion GENERATED
+[PROCEDURE]
+NAME GroupInCategory
+PROTOTYPE '(LONG pCategoryID, LONG pGroupID, <<STRING pPlantCode>), BYTE'
+PARAMETERS '(LONG pCategoryID, LONG pGroupID, <<STRING pPlantCode>)'
+[COMMON]
+DESCRIPTION 'Is the group related to the category'
+FROM Clarion Source
+[DATA]
+[SCREENCONTROLS]
+! PROMPT('l Ret Val:'),USE(?lRetVal:Prompt)
+! ENTRY(@n3),USE(lRetVal)
+[REPORTCONTROLS]
+! STRING(@n3),USE(lRetVal)
+lRetVal                  BYTE
+!!> GUID('b09a3dda-a8c2-4413-bcf2-9e3f17b22af6'),PROMPT('l Ret Val:'),HEADER('l Ret Val'),PICTURE(@n3)
+[SCREENCONTROLS]
+! PROMPT('l Category ID:'),USE(?lCategoryID:Prompt)
+! ENTRY(@n-14),USE(lCategoryID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lCategoryID),RIGHT(1)
+lCategoryID              LONG
+!!> GUID('0288aaae-00ba-418b-baae-4c47cda0020c'),PROMPT('l Category ID:'),HEADER('l Category ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Group ID:'),USE(?lGroupID:Prompt)
+! ENTRY(@n-14),USE(lGroupID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lGroupID),RIGHT(1)
+lGroupID                 LONG
+!!> GUID('cd8fb3c8-4bda-4b8b-b9ad-790179c31bab'),PROMPT('l Group ID:'),HEADER('l Group ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Plant Code:'),USE(?lPlantCode:Prompt)
+! ENTRY(@s1),USE(lPlantCode)
+[REPORTCONTROLS]
+! STRING(@s1),USE(lPlantCode)
+lPlantCode               STRING(1)
+!!> GUID('b8851c3c-e104-46ab-926e-c369af1e2e0d'),PROMPT('l Plant Code:'),HEADER('l Plant Code'),PICTURE(@s1)
+[PROMPTS]
+%GenerateOpenClose LONG  (0)
+[EMBED]
+EMBED %ProcessedCode
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 5000
+PROPERTY:END
+  ! This function will determine if the given group is related to the given category
+  ! at the given plant.  We will attempt to find an entry in CategoryGroup that relates
+  ! the given group to the given category and the given plant.
+
+  ! Fill grouping queues if not already filled
+  IF NOT(RECORDS(gCategoryQ))
+    FillInternalAPIQueues()
+  END
+
+  ! Setup parameters
+  lCategoryID = pCategoryID
+  lGroupID    = pGroupID
+  IF OMITTED(2)
+    lPlantCode = CalcPlantCode()
+  ELSE
+    lPlantCode = pPlantCode
+  END
+
+  ! Prime to CategoryGroupQ buffer with the given category, group, and plant and
+  ! try to find an entry in the CategoryGroupQ that matches
+  CGQ:CategoryID = lCategoryID
+  CGQ:GroupID    = lGroupID
+  CGQ:Plant      = lPlantCode
+  GET(gCategoryGroupQ,CGQ:CategoryID,CGQ:GroupID,CGQ:Plant)
+  IF ERRORCODE()
+    ! No entry was found so the given group IS NOT related to the given category
+    ! at the given plant
+    lRetVal = False
+  ELSE
+    ! An entry was found so the given group IS related to the given category
+    ! at the given plant
+    lRetVal = True
+  END
+
+  RETURN(lRetVal)
+[END]
+[END]
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 2
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[CALLS]
+CalcPlantCode
+[END]

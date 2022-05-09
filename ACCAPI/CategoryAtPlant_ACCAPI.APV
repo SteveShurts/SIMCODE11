@@ -1,0 +1,90 @@
+[MODULE]
+NAME 'CategoryAtPlant_ACCAPI.clw'
+[COMMON]
+FROM Clarion GENERATED
+[PROCEDURE]
+NAME CategoryAtPlant
+PROTOTYPE '(LONG pCategoryID, <<STRING pPlantCode>), BYTE'
+PARAMETERS '(LONG pCategoryID, <<STRING pPlantCode>)'
+[COMMON]
+DESCRIPTION 'Is the category used at the plant'
+FROM Clarion Source
+[DATA]
+[SCREENCONTROLS]
+! PROMPT('l Ret Val:'),USE(?lRetVal:Prompt)
+! ENTRY(@n3),USE(lRetVal)
+[REPORTCONTROLS]
+! STRING(@n3),USE(lRetVal)
+lRetVal                  BYTE
+!!> GUID('b22dd6e2-49c0-4bec-ba78-001c9f9e3c0f'),PROMPT('l Ret Val:'),HEADER('l Ret Val'),PICTURE(@n3)
+[SCREENCONTROLS]
+! PROMPT('l Plant Code:'),USE(?lPlantCode:Prompt)
+! ENTRY(@s1),USE(lPlantCode)
+[REPORTCONTROLS]
+! STRING(@s1),USE(lPlantCode)
+lPlantCode               STRING(1)
+!!> GUID('b45d3da4-d7eb-4644-95d9-013786573afb'),PROMPT('l Plant Code:'),HEADER('l Plant Code'),PICTURE(@s1)
+[SCREENCONTROLS]
+! PROMPT('l Category ID:'),USE(?lCategoryID:Prompt)
+! ENTRY(@n-14),USE(lCategoryID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lCategoryID),RIGHT(1)
+lCategoryID              LONG
+!!> GUID('865be6c7-a6a1-4a1a-9859-aedf8003398a'),PROMPT('l Category ID:'),HEADER('l Category ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[PROMPTS]
+%GenerateOpenClose LONG  (0)
+[EMBED]
+EMBED %ProcessedCode
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 5000
+PROPERTY:END
+  ! This function will determine if the given category is used at the given plant.
+  ! We will attempt to find a record in CategoryGroup that relates any group to the category
+  ! at the given plant.  There may be multiple groups related to to the category at the given
+  ! plant but we don't care how many or which ones.  All we need is to find one group related
+  ! to the category at the given plant to return that this category is used at the given plant.
+
+  ! Fill grouping queues if not already filled
+  IF NOT(RECORDS(gCategoryQ))
+    FillInternalAPIQueues()
+  END
+
+  ! Setup parameters
+  lCategoryID = pCategoryID
+  IF OMITTED(2)
+    lPlantCode = CalcPlantCode()
+  ELSE
+    lPlantCode = pPlantCode
+  END
+
+  ! Prime the CategoryGroupQ buffer with the Category and Plant in question
+  ! Try to get a CategoryGroup entry that relates any group to the category at the given plant
+  CLEAR(gCategoryGroupQ)
+  CGQ:CategoryID = lCategoryID
+  CGQ:Plant      = lPlantCode
+  GET(gCategoryGroupQ,CGQ:CategoryID,CGQ:Plant)
+  IF ERRORCODE()
+    ! Entry not found in CategoryGroupQ so the given category does not have any
+    ! groups related to it at the given plant
+    lRetVal = False
+  ELSE
+    ! An entry was found in CategoryGroup so the given category has groups related
+    ! to it at the given plant
+    lRetVal = True
+  END
+
+  RETURN(lRetVal)
+[END]
+[END]
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 2
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[CALLS]
+CalcPlantCode
+[END]

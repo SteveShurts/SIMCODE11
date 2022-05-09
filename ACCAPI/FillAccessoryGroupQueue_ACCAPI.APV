@@ -1,0 +1,122 @@
+[MODULE]
+NAME 'FillAccessoryGroupQueue_ACCAPI.clw'
+[COMMON]
+FROM Clarion GENERATED
+[PROCEDURE]
+NAME FillAccessoryGroupQueue
+PROTOTYPE '(LONG pCategoryID, LONG pGroupID, *tAccAccessoryQ pAccessoryGroupQ, <<STRING pPlantCode>), BYTE, PROC'
+PARAMETERS '(LONG pCategoryID, LONG pGroupID, *tAccAccessoryQ pAccessoryGroupQ, <<STRING pPlantCode>)'
+[COMMON]
+DESCRIPTION 'Fill the queue with accessories associated with the category and group'
+FROM Clarion Source
+[DATA]
+[SCREENCONTROLS]
+! PROMPT('QN dx:'),USE(?QNdx:Prompt)
+! ENTRY(@n-14),USE(QNdx),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(QNdx),RIGHT(1)
+QNdx                     LONG
+!!> GUID('852573c7-d35c-4c2f-8ead-f5e410d0dabc'),PROMPT('QN dx:'),HEADER('QN dx'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Ret Val:'),USE(?lRetVal:Prompt)
+! ENTRY(@n3),USE(lRetVal)
+[REPORTCONTROLS]
+! STRING(@n3),USE(lRetVal)
+lRetVal                  BYTE
+!!> GUID('804b5859-9d96-46cb-ae68-2b607c93e438'),PROMPT('l Ret Val:'),HEADER('l Ret Val'),PICTURE(@n3)
+[SCREENCONTROLS]
+! PROMPT('l Category ID:'),USE(?lCategoryID:Prompt)
+! ENTRY(@n-14),USE(lCategoryID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lCategoryID),RIGHT(1)
+lCategoryID              LONG
+!!> GUID('144d8da7-0069-4c2a-9aa8-da7090752af9'),PROMPT('l Category ID:'),HEADER('l Category ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Group ID:'),USE(?lGroupID:Prompt)
+! ENTRY(@n-14),USE(lGroupID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lGroupID),RIGHT(1)
+lGroupID                 LONG
+!!> GUID('295be879-d2f1-4baf-82d7-4b5f5efa9d27'),PROMPT('l Group ID:'),HEADER('l Group ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Plant Code:'),USE(?lPlantCode:Prompt)
+! ENTRY(@s1),USE(lPlantCode)
+[REPORTCONTROLS]
+! STRING(@s1),USE(lPlantCode)
+lPlantCode               STRING(1)
+!!> GUID('107650c5-e400-4111-8cc1-7349bd9ba52d'),PROMPT('l Plant Code:'),HEADER('l Plant Code'),PICTURE(@s1)
+[PROMPTS]
+%GenerateOpenClose LONG  (0)
+[EMBED]
+EMBED %ProcessedCode
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 5000
+PROPERTY:END
+  ! This function will fill the passed queue with all accessories that associated with the
+  ! passed category and group at the given plant.  We will use the ACCAPI.AccessoryInGroup
+  ! function to determine if an accessory is associated with the category and group at the
+  ! given plant.
+
+  ! Fill grouping queues if not already filled
+  IF NOT(RECORDS(gCategoryQ))
+    FillInternalAPIQueues()
+  END
+
+  ! Setup parameters
+  lCategoryID = pCategoryID
+  lGroupID    = pGroupID
+  IF OMITTED(4)
+    lPlantCode = CalcPlantCode()
+  ELSE
+    lPlantCode = pPlantCode
+  END
+
+  FREE(pAccessoryGroupQ)
+
+  ! Get the CategoryGroupID of the entry in CategoryGroupQ that
+  ! corresponds to the current CategoryID, GroupID, and PlantCode
+  CGQ:CategoryID = lCategoryID
+  CGQ:GroupID    = lGroupID
+  CGQ:Plant      = lPlantCode
+  GET(gCategoryGroupQ,CGQ:CategoryID,CGQ:GroupID,CGQ:Plant)
+  IF ERRORCODE()
+    ! An error occured so return false
+    RETURN(False)
+  END
+
+  ! Loop through the AssociationQ
+  LOOP QNdx = 1 TO RECORDS(gAssociationQ)
+    GET(gAssociationQ,QNdx)
+    IF ERRORCODE()
+      ! An error occured so set the return value to false and break
+      lRetVal = False
+      BREAK
+    END
+    IF ASQ:CategoryGroupID = CGQ:CategoryGroupID
+      ! The current accessory is associated with the current
+      ! category, group, and plant so add it to the pAccessoryGroupQ
+      pAccessoryGroupQ.PartNumber = ASQ:PartNumber
+      ADD(pAccessoryGroupQ)
+    END
+  END
+
+  ! Sort the Q in PartNumbe order
+  SORT(pAccessoryGroupQ,pAccessoryGroupQ.PartNumber)
+
+  ! Return if the operation was successful
+  RETURN(lRetVal)
+[END]
+[END]
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 2
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[CALLS]
+AccessoryInGroup
+CalcPlantCode
+[END]

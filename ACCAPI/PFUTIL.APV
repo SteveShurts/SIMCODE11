@@ -1,0 +1,20 @@
+[MODULE]
+NAME 'PFUTIL.LIB'
+NOPOPULATE
+[COMMON]
+FROM Clarion ExternalDLL
+[PROCEDURE]
+NAME PF_ProductOptionsPlant
+PROTOTYPE '(STRING pOrdPlant, <<STRING pOrdRegion>), STRING'
+PARAMETERS '(STRING pOrdPlant,<<STRING pOrdRegion>)'
+NOEXPORT
+[COMMON]
+FROM Clarion External
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 1
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[END]

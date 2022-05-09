@@ -1,0 +1,98 @@
+[MODULE]
+NAME 'FillCategoryQueue_ACCAPI.clw'
+[COMMON]
+FROM Clarion GENERATED
+[PROCEDURE]
+NAME FillCategoryQueue
+PROTOTYPE '(*tAccCategoryQ pCategoryQ, <<STRING pPlantCode>), BYTE, PROC'
+PARAMETERS '(*tAccCategoryQ pUsedCategoryQ, <<STRING pPlantCode>)'
+[COMMON]
+DESCRIPTION 'Fill the queue with categories used at the plant'
+FROM Clarion Source
+[DATA]
+[SCREENCONTROLS]
+! PROMPT('l Ret Val:'),USE(?lRetVal:Prompt)
+! ENTRY(@n3),USE(lRetVal)
+[REPORTCONTROLS]
+! STRING(@n3),USE(lRetVal)
+lRetVal                  BYTE
+!!> GUID('1579d456-7fa2-47d0-a545-34ecb40a9c95'),PROMPT('l Ret Val:'),HEADER('l Ret Val'),PICTURE(@n3)
+[SCREENCONTROLS]
+! PROMPT('QN dx:'),USE(?QNdx:Prompt)
+! ENTRY(@n-14),USE(QNdx),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(QNdx),RIGHT(1)
+QNdx                     LONG
+!!> GUID('60e64338-a5af-4bd8-8ff5-e14e294fbcc0'),PROMPT('QN dx:'),HEADER('QN dx'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Plant Code:'),USE(?lPlantCode:Prompt)
+! ENTRY(@s1),USE(lPlantCode)
+[REPORTCONTROLS]
+! STRING(@s1),USE(lPlantCode)
+lPlantCode               STRING(1)
+!!> GUID('6985a548-b8d4-451a-bfe4-d6b0210a5393'),PROMPT('l Plant Code:'),HEADER('l Plant Code'),PICTURE(@s1)
+[PROMPTS]
+%GenerateOpenClose LONG  (0)
+[EMBED]
+EMBED %ProcessedCode
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 5000
+PROPERTY:END
+  ! This function will fill the passed queue with all categories that are used at the
+  ! given plant.  We will use the ACCAPI.CategoryAtPlant function to determine if each
+  ! category is used at the given plant.
+
+  ! Fill grouping queues if not already filled
+  IF NOT(RECORDS(gCategoryQ))
+    FillInternalAPIQueues()
+  END
+
+  ! Setup parameters
+  IF OMITTED(2)
+    lPlantCode = CalcPlantCode()
+  ELSE
+    lPlantCode = pPlantCode
+  END
+
+  FREE(pUsedCategoryQ)
+
+  ! Loop through the CategoryQ and determine if each entry is used at the given plant
+  lRetVal = True
+  LOOP QNdx = 1 TO RECORDS(gCategoryQ)
+    GET(gCategoryQ,QNdx)
+    ! Check for an error
+    IF ERRORCODE()
+      ! There was an error, set the return value to false and break
+      lRetVal = False
+      BREAK
+    END
+    IF CategoryAtPlant(CATQ:CategoryID,lPlantCode)
+      ! The current category is used at the given
+      ! plant so add it to the passed UsedCategoryQ
+      pUsedCategoryQ.CategoryID   = CATQ:CategoryID
+      pUsedCategoryQ.CategoryName = CATQ:CategoryName
+      pUsedCategoryQ.IntendedUse  = CATQ:IntendedUse
+      ADD(pUsedCategoryQ)
+    END
+  END
+
+  ! Sort the Q in Category Name order
+  SORT(pUsedCategoryQ,pUsedCategoryQ.CategoryName)
+
+  ! Return if the operation was successful
+  RETURN(lRetVal)
+[END]
+[END]
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 2
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[CALLS]
+CalcPlantCode
+CategoryAtPlant
+[END]

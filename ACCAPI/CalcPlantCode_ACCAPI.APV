@@ -1,0 +1,57 @@
+[MODULE]
+NAME 'CalcPlantCode_ACCAPI.clw'
+[COMMON]
+FROM Clarion GENERATED
+[PROCEDURE]
+NAME CalcPlantCode
+PROTOTYPE '(), STRING'
+PARAMETERS '()'
+NOEXPORT
+[COMMON]
+DESCRIPTION 'Calculate the plant code'
+FROM Clarion Source
+[DATA]
+[SCREENCONTROLS]
+! PROMPT('l Ret Val:'),USE(?lRetVal:Prompt)
+! ENTRY(@s1),USE(lRetVal)
+[REPORTCONTROLS]
+! STRING(@s1),USE(lRetVal)
+lRetVal                  STRING(1)
+!!> GUID('a1738674-3124-4821-836f-f11fae551c90'),PROMPT('l Ret Val:'),HEADER('l Ret Val'),PICTURE(@s1)
+[SCREENCONTROLS]
+! PROMPT('l Plant Q:'),USE(?lPlantQ:Prompt)
+! ENTRY(@s1),USE(lPlantQ)
+[REPORTCONTROLS]
+! STRING(@s1),USE(lPlantQ)
+lPlantQ                  QUEUE(GloPlantsQTYPE),PRE()
+!!> GUID('6b48461a-dd91-4868-8c2e-34da3ad629f4'),PROMPT('l Plant Q:'),HEADER('l Plant Q'),PICTURE(@s1)
+                         END
+!!> GUID('cb0d7160-ce11-4262-aa87-6d93c900a75b')
+[PROMPTS]
+%GenerateOpenClose LONG  (0)
+[EMBED]
+EMBED %ProcessedCode
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 5000
+PROPERTY:END
+  Junk# = GetPlantInfo(GNT:Plant,lPlantQ)
+  IF lPlantQ.AliasOfPlant
+    lRetVal = lPlantQ.AliasOfPlant
+  ELSE
+    lRetVal = GNT:Plant
+  END
+  DebugString('WPK CalcPlantCode returning PLANT = ' & lRetVal)
+
+  RETURN(lRetVal)
+[END]
+[END]
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 2
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[END]

@@ -1,0 +1,122 @@
+[MODULE]
+NAME 'AccessoryInGroup_ACCAPI.clw'
+[COMMON]
+FROM Clarion GENERATED
+[PROCEDURE]
+NAME AccessoryInGroup
+PROTOTYPE '(STRING pPartNumber, LONG pCategoryID, LONG pGroupID, <<STRING pPlantCode>), BYTE'
+PARAMETERS '(STRING pPartNumber, LONG pCategoryID, LONG pGroupID, <<STRING pPlantCode>)'
+[COMMON]
+DESCRIPTION 'Is the accessory associated with the category and group'
+FROM Clarion Source
+[DATA]
+[SCREENCONTROLS]
+! PROMPT('l Category Group ID:'),USE(?lCategoryGroupID:Prompt)
+! ENTRY(@n-14),USE(lCategoryGroupID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lCategoryGroupID),RIGHT(1)
+lCategoryGroupID         LONG
+!!> GUID('7d962374-b627-48a0-b7f0-292c32678f82'),PROMPT('l Category Group ID:'),HEADER('l Category Group ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Part Number:'),USE(?lPartNumber:Prompt)
+! ENTRY(@s7),USE(lPartNumber)
+[REPORTCONTROLS]
+! STRING(@s7),USE(lPartNumber)
+lPartNumber              STRING(7)
+!!> GUID('d72dcb80-f953-4059-bbe0-4da1a71dd50e'),PROMPT('l Part Number:'),HEADER('l Part Number'),PICTURE(@s7)
+[SCREENCONTROLS]
+! PROMPT('l Ret Val:'),USE(?lRetVal:Prompt)
+! ENTRY(@n3),USE(lRetVal)
+[REPORTCONTROLS]
+! STRING(@n3),USE(lRetVal)
+lRetVal                  BYTE
+!!> GUID('e3374465-fe77-457b-bb9e-aaddabe722da'),PROMPT('l Ret Val:'),HEADER('l Ret Val'),PICTURE(@n3)
+[SCREENCONTROLS]
+! PROMPT('l Category ID:'),USE(?lCategoryID:Prompt)
+! ENTRY(@n-14),USE(lCategoryID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lCategoryID),RIGHT(1)
+lCategoryID              LONG
+!!> GUID('9c682ec2-11ef-4c15-bf07-4479d446606d'),PROMPT('l Category ID:'),HEADER('l Category ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Group ID:'),USE(?lGroupID:Prompt)
+! ENTRY(@n-14),USE(lGroupID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lGroupID),RIGHT(1)
+lGroupID                 LONG
+!!> GUID('2b6be3cb-ee32-4ec8-bb83-82e4eba7d183'),PROMPT('l Group ID:'),HEADER('l Group ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Plant Code:'),USE(?lPlantCode:Prompt)
+! ENTRY(@s6),USE(lPlantCode)
+[REPORTCONTROLS]
+! STRING(@s6),USE(lPlantCode)
+lPlantCode               STRING(6)
+!!> GUID('039c8529-db9f-48ad-b17b-ff4ff055d8a8'),PROMPT('l Plant Code:'),HEADER('l Plant Code'),PICTURE(@s6)
+[PROMPTS]
+%GenerateOpenClose LONG  (0)
+[EMBED]
+EMBED %ProcessedCode
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 5000
+PROPERTY:END
+  ! This function will determine if the given accessory is associated with the passed group
+  ! and category at the given plant.  We will attempt to find an entry in the AssociationQ that
+  ! associates the passed PartNumber with the given CategoryID, GroupID, and PlantCode.
+
+  ! Fill grouping queues if not already filled
+  IF NOT(RECORDS(gCategoryQ))
+    FillInternalAPIQueues()
+  END
+
+  ! Setup parameters
+  lPartNumber = pPartNumber
+  lCategoryID = pCategoryID
+  lGroupID    = pGroupID
+  IF OMITTED(4)
+    lPlantCode = CalcPlantCode()
+  ELSE
+    lPlantCode = pPlantCode
+  END
+
+  lPlantCode = PF_ProductOptionsPlant(lPlantCode)
+
+  ! Prime the AssociationQ buffer with the PartNumber and CategoryGroupID
+  CLEAR(gAssociationQ)
+  ASQ:PartNumber = lPartNumber
+  ! Use the PlantCode, CategoryID, and GroupID to determine the CategoryGroupID
+  CGQ:CategoryID = lCategoryID
+  CGQ:GroupID    = lGroupID
+  CGQ:Plant      = lPlantCode
+  GET(gCategoryGroupQ,CGQ:CategoryID,CGQ:GroupID,CGQ:Plant)
+  IF ERRORCODE()
+    ! The passed group is not related to the passed category at the given plant.
+    ! Clear the CategoryGroupQ buffer so the GET on the AssociationQ will fail and
+    ! the function will return false.
+    CLEAR(gCategoryGroupQ)
+  ELSE
+    ASQ:CategoryGroupID = CGQ:CategoryGroupID
+  END
+
+  ! Attempt to get an AssociationQ entry that relates the PartNumber to the CategoryGroupID
+  GET(gAssociationQ,ASQ:CategoryGroupID,ASQ:PartNumber)
+  IF ERRORCODE()
+    lRetVal = False
+  ELSE
+    lRetVal = True
+  END
+
+  RETURN(lRetVal)
+[END]
+[END]
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 2
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[CALLS]
+CalcPlantCode
+[END]

@@ -1,0 +1,20 @@
+[MODULE]
+NAME 'SOEDATA.LIB'
+NOPOPULATE
+[COMMON]
+FROM Clarion ExternalDLL
+[PROCEDURE]
+NAME DebugString
+PROTOTYPE '(STRING pDebugString)'
+PARAMETERS '(STRING pDebugString)'
+NOEXPORT
+[COMMON]
+FROM Clarion External
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 1
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[END]

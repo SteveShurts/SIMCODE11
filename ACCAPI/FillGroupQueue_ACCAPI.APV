@@ -1,0 +1,170 @@
+[MODULE]
+NAME 'FillGroupQueue_ACCAPI.clw'
+[COMMON]
+FROM Clarion GENERATED
+[PROCEDURE]
+NAME FillGroupQueue
+PROTOTYPE '(LONG pCategoryID, *tAccGroupQ pGroupsInCategoryQ, <<STRING pPlantCode>, <<BYTE pAddAllGroupsEntry>, <<BYTE pAddAllOthersEntry>), BYTE, PROC'
+PARAMETERS '(LONG pCategoryID, *tAccGroupQ pGroupsInCategoryQ, <<STRING pPlantCode>, <<BYTE pAddAllGroupsEntry>, <<BYTE pAddAllOthersEntry>)'
+[COMMON]
+DESCRIPTION 'Fill the queue with groups related to the category'
+FROM Clarion Source
+[DATA]
+[SCREENCONTROLS]
+! PROMPT('l Category ID:'),USE(?lCategoryID:Prompt)
+! ENTRY(@n-14),USE(lCategoryID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(lCategoryID),RIGHT(1)
+lCategoryID              LONG
+!!> GUID('18a95cf4-eabb-4124-8622-8fa92d5725c4'),PROMPT('l Category ID:'),HEADER('l Category ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Plant Code:'),USE(?lPlantCode:Prompt)
+! ENTRY(@s1),USE(lPlantCode)
+[REPORTCONTROLS]
+! STRING(@s1),USE(lPlantCode)
+lPlantCode               STRING(1)
+!!> GUID('e235ff18-1cdf-4d4d-ba44-d86be25e35a8'),PROMPT('l Plant Code:'),HEADER('l Plant Code'),PICTURE(@s1)
+[SCREENCONTROLS]
+! PROMPT('QN dx:'),USE(?QNdx:Prompt)
+! ENTRY(@n-14),USE(QNdx),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(QNdx),RIGHT(1)
+QNdx                     LONG
+!!> GUID('bd30c951-284b-4524-82a9-3192f937ecb2'),PROMPT('QN dx:'),HEADER('QN dx'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('l Ret Val:'),USE(?lRetVal:Prompt)
+! ENTRY(@n3),USE(lRetVal)
+[REPORTCONTROLS]
+! STRING(@n3),USE(lRetVal)
+lRetVal                  BYTE
+!!> GUID('4018bb3e-ef70-4569-8c8d-7a6077b5a58b'),PROMPT('l Ret Val:'),HEADER('l Ret Val'),PICTURE(@n3)
+[SCREENCONTROLS]
+! PROMPT('l Add All Groups Entry:'),USE(?lAddAllGroupsEntry:Prompt)
+! ENTRY(@n3),USE(lAddAllGroupsEntry)
+[REPORTCONTROLS]
+! STRING(@n3),USE(lAddAllGroupsEntry)
+lAddAllGroupsEntry       BYTE
+!!> GUID('60450e19-2f68-4449-86de-548377aaebbb'),PROMPT('l Add All Groups Entry:'),HEADER('l Add All Groups Entry'),PICTURE(@n3)
+[SCREENCONTROLS]
+! PROMPT('l Add All Others Entry:'),USE(?lAddAllOthersEntry:Prompt)
+! ENTRY(@n3),USE(lAddAllOthersEntry)
+[REPORTCONTROLS]
+! STRING(@n3),USE(lAddAllOthersEntry)
+lAddAllOthersEntry       BYTE
+!!> GUID('26058b38-05ac-42ba-a8ab-6fb9680a684d'),PROMPT('l Add All Others Entry:'),HEADER('l Add All Others Entry'),PICTURE(@n3)
+[PROMPTS]
+%GenerateOpenClose LONG  (0)
+[EMBED]
+EMBED %ProcessedCode
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 5000
+PROPERTY:END
+  ! This function will fill the passed queue with all groups that are related to the category
+  ! at the given plant.  We will use the ACCAPI.GroupInCategory function to determine if each
+  ! group is related to the category at the given plant.
+
+  ! Fill grouping queues if not already filled
+  IF NOT(RECORDS(gCategoryQ))
+    FillInternalAPIQueues()
+  END
+
+  ! Setup parameters
+  lCategoryID = pCategoryID
+  IF OMITTED(3)
+    lPlantCode = CalcPlantCode()
+  ELSE
+    lPlantCode = pPlantCode
+  END
+!Added 4/13/204 WPK #14110
+  IF OMITTED(4)
+    lAddAllGroupsEntry = False
+  ELSE
+    lAddAllGroupsEntry = pAddAllGroupsEntry
+  END
+  IF OMITTED(5)
+    lAddAllOthersEntry = False
+  ELSE
+    lAddAllOthersEntry = pAddAllOthersEntry
+  END
+!EndAdded 4/13/204 WPK #14110
+
+  FREE(pGroupsInCategoryQ)
+
+  ! Loop thorugh the GroupQ and determine if each group is related to the
+  ! passed category for the given plant
+  lRetVal = True
+  LOOP QNdx = 1 TO RECORDS(gGroupQ)
+    GET(gGroupQ,QNdx)
+    IF ERRORCODE()
+      ! An error occured so set the return value to false and break
+      lRetVal = False
+      BREAK
+    END
+    IF GroupInCategory(lCategoryID,GRPQ:GroupID,lPlantCode)
+      ! The group is related to the category at the given plant
+      ! Get the CategoryGroupID from the CategoryGroupQ and add the
+      ! group to the pGroupsInCategoryQ
+      CGQ:CategoryID = lCategoryID
+      CGQ:GroupID    = GRPQ:GroupID
+      CGQ:Plant      = lPlantCode
+      GET(gCategoryGroupQ,CGQ:CategoryID,CGQ:GroupID,CGQ:Plant)
+      IF ERRORCODE()
+        ! An error occured so set the return value to false and break
+        lRetVal = False
+        BREAK
+      END
+      pGroupsInCategoryQ.CategoryGroupID = CGQ:CategoryGroupID
+      pGroupsInCategoryQ.CategoryID      = lCategoryID
+      pGroupsInCategoryQ.GroupID         = GRPQ:GroupID
+      pGroupsInCategoryQ.GroupName       = GRPQ:GroupName
+      pGroupsInCategoryQ.IntendedUse     = GRPQ:IntendedUse
+      ADD(pGroupsInCategoryQ)
+    END
+  END
+
+  ! Sort the Q in Group Name order
+  SORT(pGroupsInCategoryQ,pGroupsInCategoryQ.GroupName)
+
+!Added 4/13/204 WPK #14110
+  IF lAddAllOthersEntry AND RECORDS(pGroupsInCategoryQ)
+    ! Add the entry "All Others" to the queue if it was requested
+    ! We will only add this entry if there are actual groups in the category
+    ! because this entry only makes sense when there are other groups
+    ! We will use -1 for all IDs for this entry
+    CLEAR(pGroupsInCategoryQ)
+    pGroupsInCategoryQ.CategoryGroupID = -1
+    pGroupsInCategoryQ.CategoryID      = -1
+    pGroupsInCategoryQ.GroupID         = -1
+    pGroupsInCategoryQ.GroupName       = 'All Others'
+    pGroupsInCategoryQ.IntendedUse     = ''
+    ADD(pGroupsInCategoryQ)
+  END
+  IF lAddAllGroupsEntry
+    ! Add the entry "All Accessories" to the queue if it was requested
+    ! We will use 0 for all IDs for this entry
+    CLEAR(pGroupsInCategoryQ)
+    pGroupsInCategoryQ.CategoryGroupID = 0
+    pGroupsInCategoryQ.CategoryID      = 0
+    pGroupsInCategoryQ.GroupID         = 0
+    pGroupsInCategoryQ.GroupName       = 'All Accessories'
+    pGroupsInCategoryQ.IntendedUse     = ''
+    ADD(pGroupsInCategoryQ,1)
+  END
+!EndAdded 4/13/204 WPK #14110
+
+  ! Return if the operation was successful
+  RETURN(lRetVal)
+[END]
+[END]
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 2
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[CALLS]
+CalcPlantCode
+[END]

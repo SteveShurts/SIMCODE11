@@ -1,0 +1,138 @@
+[MODULE]
+NAME 'FillInternalAPIQueues_ACCAPI.clw'
+[COMMON]
+FROM Clarion GENERATED
+[PROCEDURE]
+NAME FillInternalAPIQueues
+NOEXPORT
+[COMMON]
+DESCRIPTION 'Fill the APIs internal queue'
+FROM Clarion Source
+[FILES]
+[OTHERS]
+AccAssociation
+AccCategory
+AccGroup
+AccCategoryGroup
+[PROMPTS]
+%GenerateOpenClose LONG  (0)
+[EMBED]
+EMBED %ProcessedCode
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 5000
+PROPERTY:END
+    ! This procedure will fill the queues that correspond to the accessory grouping
+    ! tables so that they can be used by the other functions in ACCAPI without directly
+    ! hitting the tables.
+
+    ! Check if any of the tables were already open
+    ! If you are going to use this API to inteface with the accessory
+    ! grouping system, you should not be accessing the tables directly
+    IF AccCategoryGroup::Used OR AccAssociation::Used OR |
+        AccGroup::Used         OR AccAssociation::Used
+        IF GNT:Develop
+            MESSAGE('One or more of the accessory grouping tables is already open!' & |
+                '||You should not use the ACCAPI functions if you are directly accessing the grouping tables.' & |
+                '|The ACCAPI functions do not guarantee the integrity of the table record buffers.' & |
+                '||Your record buffers may get stomped!!','Developer Error',ICON:Exclamation)
+        ELSE
+            MESSAGE('Please contact Software Development with the following information...' & |
+                '||The program has called an ACCAPI function with the accessory grouping tables already open.', |
+                'Error Initializing ACCAPI',ICON:Exclamation)
+        END
+    END
+
+    ! Open tables
+    IF AccAssociation::Used = 0
+        CheckOpen(AccAssociation,1)
+    END
+    AccAssociation::Used += 1
+    IF AccCategory::Used = 0
+        CheckOpen(AccCategory,1)
+    END
+    AccCategory::Used += 1
+    IF AccCategoryGroup::Used = 0
+        CheckOpen(AccCategoryGroup,1)
+    END
+    AccCategoryGroup::Used += 1
+    IF AccGroup::Used = 0
+        CheckOpen(AccGroup,1)
+    END
+    AccGroup::Used += 1
+
+    ! Fill Category Q
+    FREE(gCategoryQ)
+    SET(ACAT:CategoryIDKey)
+    LOOP
+        NEXT(AccCategory)
+        IF ERRORCODE()
+            BREAK
+        END
+        CLEAR(gCategoryQ)
+        CATQ:CategoryID   = ACAT:Category_ID
+        CATQ:CategoryName = ACAT:Category_Name
+        CATQ:IntendedUse  = ACAT:Intended_Use
+        ADD(gCategoryQ)
+    END
+
+    ! Fill Group Q
+    FREE(gGroupQ)
+    SET(AGRP:GroupIDKey)
+    LOOP
+        NEXT(AccGroup)
+        IF ERRORCODE() THEN BREAK.
+        CLEAR(gGroupQ)
+        GRPQ:GroupID     = AGRP:Group_ID
+        GRPQ:GroupName   = AGRP:Group_Name
+        GRPQ:IntendedUse = AGRP:Intended_Use
+        ADD(gGroupQ)
+    END
+
+    ! Fill CategoryGroup Q
+    FREE(gCategoryGroupQ)
+    SET(ACG:CategoryGroupIDKey)
+    LOOP
+        NEXT(AccCategoryGroup)
+        IF ERRORCODE() THEN BREAK.
+        CLEAR(gCategoryGroupQ)
+        CGQ:CategoryGroupID = ACG:Category_Group_ID
+        CGQ:CategoryID      = ACG:Category_ID
+        CGQ:GroupID         = ACG:Group_ID
+        CGQ:IntendedUse     = ACG:Intended_Use
+        CGQ:Plant           = ACG:Plant
+        ADD(gCategoryGroupQ)
+    END
+
+    ! Fill Association Q
+    FREE(gAssociationQ)
+    SET(AASS:CategoryGroupPartNumberKey)
+    LOOP
+        NEXT(AccAssociation)
+        IF ERRORCODE() THEN BREAK.
+        CLEAR(gAssociationQ)
+        ASQ:CategoryGroupID = AASS:Category_Group_ID
+        ASQ:PartNumber      = AASS:Part_Number
+        ADD(gAssociationQ)
+    END
+
+    ! Close tables
+    AccAssociation::Used -= 1
+    IF AccAssociation::Used = 0 THEN CLOSE(AccAssociation).
+    AccCategory::Used -= 1
+    IF AccCategory::Used = 0 THEN CLOSE(AccCategory).
+    AccCategoryGroup::Used -= 1
+    IF AccCategoryGroup::Used = 0 THEN CLOSE(AccCategoryGroup).
+    AccGroup::Used -= 1
+    IF AccGroup::Used = 0 THEN CLOSE(AccGroup).
+[END]
+[END]
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 2
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[END]

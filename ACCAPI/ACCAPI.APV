@@ -1,0 +1,150 @@
+[PROGRAM]
+[COMMON]
+FROM Clarion Clarion
+[DATA]
+[SCREENCONTROLS]
+! PROMPT('g Category Q:'),USE(?gCategoryQ:Prompt)
+! ENTRY(@s255),USE(gCategoryQ)
+[REPORTCONTROLS]
+! STRING(@s255),USE(gCategoryQ)
+gCategoryQ               QUEUE,PRE(CATQ)
+!!> GUID('77d8d681-4985-4c96-abc1-964265f78630'),PROMPT('g Category Q:'),HEADER('g Category Q'),PICTURE(@s255)
+[SCREENCONTROLS]
+! PROMPT('Category ID:'),USE(?CATQ:CategoryID:Prompt)
+! ENTRY(@n-14),USE(CATQ:CategoryID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(CATQ:CategoryID),RIGHT(1)
+CategoryID                 LONG
+!!> GUID('fee29b68-8774-486b-9a29-30fe521978d9'),PROMPT('Category ID:'),HEADER('Category ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('Category Name:'),USE(?CATQ:CategoryName:Prompt)
+! ENTRY(@s30),USE(CATQ:CategoryName)
+[REPORTCONTROLS]
+! STRING(@s30),USE(CATQ:CategoryName)
+CategoryName               STRING(30)
+!!> GUID('add71329-3d9c-4ea0-8372-b1a4d812ed38'),PROMPT('Category Name:'),HEADER('Category Name'),PICTURE(@s30)
+[SCREENCONTROLS]
+! PROMPT('Intended Use:'),USE(?CATQ:IntendedUse:Prompt)
+! TEXT,USE(CATQ:IntendedUse),BOXED
+[REPORTCONTROLS]
+! TEXT,USE(CATQ:IntendedUse),BOXED
+IntendedUse                STRING(1024)
+!!> GUID('e9cd3d97-9b47-4222-98c1-6ebba89ba495'),PROMPT('Intended Use:'),HEADER('Intended Use'),PICTURE(@s255)
+                         END
+!!> GUID('8ac1f5c0-3016-45e0-b63d-71277f7baf2c')
+[SCREENCONTROLS]
+! PROMPT('g Group Q:'),USE(?gGroupQ:Prompt)
+! ENTRY(@s255),USE(gGroupQ)
+[REPORTCONTROLS]
+! STRING(@s255),USE(gGroupQ)
+gGroupQ                  QUEUE,PRE(GRPQ)
+!!> GUID('5fe95ecd-0346-4ccd-a09e-7ef037219a5d'),PROMPT('g Group Q:'),HEADER('g Group Q'),PICTURE(@s255)
+[SCREENCONTROLS]
+! PROMPT('Group ID:'),USE(?GRPQ:GroupID:Prompt)
+! ENTRY(@n-14),USE(GRPQ:GroupID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(GRPQ:GroupID),RIGHT(1)
+GroupID                    LONG
+!!> GUID('5c3786a3-72ba-4aef-bc54-f6f3bba67da1'),PROMPT('Group ID:'),HEADER('Group ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('Group Name:'),USE(?GRPQ:GroupName:Prompt)
+! ENTRY(@s30),USE(GRPQ:GroupName)
+[REPORTCONTROLS]
+! STRING(@s30),USE(GRPQ:GroupName)
+GroupName                  STRING(30)
+!!> GUID('2941253d-123a-409c-8cd2-8b413206670d'),PROMPT('Group Name:'),HEADER('Group Name'),PICTURE(@s30)
+[SCREENCONTROLS]
+! PROMPT('Intended Use:'),USE(?GRPQ:IntendedUse:Prompt)
+! TEXT,USE(GRPQ:IntendedUse),BOXED
+[REPORTCONTROLS]
+! TEXT,USE(GRPQ:IntendedUse),BOXED
+IntendedUse                STRING(1024)
+!!> GUID('c448ce41-c13f-496d-9156-acada2516f53'),PROMPT('Intended Use:'),HEADER('Intended Use'),PICTURE(@s255)
+                         END
+!!> GUID('3464888e-e153-45a8-b453-8c2867300dab')
+[SCREENCONTROLS]
+! PROMPT('g Category Group Q:'),USE(?gCategoryGroupQ:Prompt)
+! ENTRY(@s255),USE(gCategoryGroupQ)
+[REPORTCONTROLS]
+! STRING(@s255),USE(gCategoryGroupQ)
+gCategoryGroupQ          QUEUE,PRE(CGQ)
+!!> GUID('fd52fe25-4a8c-44ed-a973-0a4467d935b7'),PROMPT('g Category Group Q:'),HEADER('g Category Group Q'),PICTURE(@s255)
+[SCREENCONTROLS]
+! PROMPT('Category Group ID:'),USE(?CGQ:CategoryGroupID:Prompt)
+! ENTRY(@n-14),USE(CGQ:CategoryGroupID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(CGQ:CategoryGroupID),RIGHT(1)
+CategoryGroupID            LONG
+!!> GUID('03be51f8-5cd1-4743-8d85-fe6594033df6'),PROMPT('Category Group ID:'),HEADER('Category Group ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('Category ID:'),USE(?CGQ:CategoryID:Prompt)
+! ENTRY(@n-14),USE(CGQ:CategoryID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(CGQ:CategoryID),RIGHT(1)
+CategoryID                 LONG
+!!> GUID('d277edcf-3b8d-48c3-99c4-be245754284e'),PROMPT('Category ID:'),HEADER('Category ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('Group ID:'),USE(?CGQ:GroupID:Prompt)
+! ENTRY(@n-14),USE(CGQ:GroupID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(CGQ:GroupID),RIGHT(1)
+GroupID                    LONG
+!!> GUID('394683b3-ce91-4c8e-a50c-48edc277cbd0'),PROMPT('Group ID:'),HEADER('Group ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('Intended Use:'),USE(?CGQ:IntendedUse:Prompt)
+! TEXT,USE(CGQ:IntendedUse),BOXED
+[REPORTCONTROLS]
+! TEXT,USE(CGQ:IntendedUse),BOXED
+IntendedUse                STRING(1024)
+!!> GUID('e5aaad72-bbab-41d3-a445-045a8a7ad9a7'),PROMPT('Intended Use:'),HEADER('Intended Use'),PICTURE(@s255)
+[SCREENCONTROLS]
+! PROMPT('Plant:'),USE(?CGQ:Plant:Prompt)
+! ENTRY(@s1),USE(CGQ:Plant)
+[REPORTCONTROLS]
+! STRING(@s1),USE(CGQ:Plant)
+Plant                      STRING(1)
+!!> GUID('ecd4ebcd-e47a-432f-ad78-7e657e33314d'),PROMPT('Plant:'),HEADER('Plant'),PICTURE(@s1)
+                         END
+!!> GUID('947d2710-7db2-40d6-b013-e023da4d1708')
+[SCREENCONTROLS]
+! PROMPT('g Association Q:'),USE(?gAssociationQ:Prompt)
+! ENTRY(@s11),USE(gAssociationQ)
+[REPORTCONTROLS]
+! STRING(@s11),USE(gAssociationQ)
+gAssociationQ            QUEUE,PRE(ASQ)
+!!> GUID('4bdea475-c831-4947-a8ac-db457091c278'),PROMPT('g Association Q:'),HEADER('g Association Q'),PICTURE(@s11)
+[SCREENCONTROLS]
+! PROMPT('Category Group ID:'),USE(?ASQ:CategoryGroupID:Prompt)
+! ENTRY(@n-14),USE(ASQ:CategoryGroupID),RIGHT(1)
+[REPORTCONTROLS]
+! STRING(@n-14),USE(ASQ:CategoryGroupID),RIGHT(1)
+CategoryGroupID            LONG
+!!> GUID('1a7c6e09-2228-4f15-bfd7-38e62400537f'),PROMPT('Category Group ID:'),HEADER('Category Group ID'),PICTURE(@n-14),JUSTIFY(RIGHT,1)
+[SCREENCONTROLS]
+! PROMPT('Part Number:'),USE(?ASQ:PartNumber:Prompt)
+! ENTRY(@s7),USE(ASQ:PartNumber)
+[REPORTCONTROLS]
+! STRING(@s7),USE(ASQ:PartNumber)
+PartNumber                 STRING(7)
+!!> GUID('5e4dfa10-6660-459f-ac9a-7dac0b15bef2'),PROMPT('Part Number:'),HEADER('Part Number'),PICTURE(@s7)
+                         END
+!!> GUID('9db69bda-78c5-40ef-901d-7e91895f45db')
+[EMBED]
+EMBED %GlobalData
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 4000
+PROPERTY:END
+INCLUDE('WSOE.EQU','ACCAPI Queue Types')
+[END]
+EMBED %BeforeGlobalIncludes
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 4000
+PROPERTY:END
+INCLUDE('WSOE.EQU','PlantsQType')
+[END]
+[END]
+[END]

@@ -1,0 +1,20 @@
+[MODULE]
+NAME 'SOEFILES.LIB'
+NOPOPULATE
+[COMMON]
+FROM Clarion ExternalDLL
+[PROCEDURE]
+NAME GetPlantInfo
+PROTOTYPE '(STRING pPlant, *GloPlantsQType PlantInfo), LONG, PROC'
+PARAMETERS '(STRING pPlant,*GloPlantsQType PlantInfo)'
+NOEXPORT
+[COMMON]
+FROM Clarion External
+[ADDITION]
+NAME Simonton PreemptiveProcedure
+[INSTANCE]
+INSTANCE 1
+OWNER 3
+[PROMPTS]
+%EnablePreemptiveThreading LONG  (0)
+[END]
